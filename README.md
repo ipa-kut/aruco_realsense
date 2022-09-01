@@ -12,6 +12,12 @@ From the workspace directory:
 
 - build repository `colcon build --symlink-install`
 
-- with realsense device connected launch `ros2 launch aruco_rs2 rs_aruco.launch.py`
+- with USB camera connected launch `ros2 launch aruco_rs2 rs_aruco.launch.py`
 
 - opens up rviz2, which can visualize the marker frames
+
+# Integration notes
+
+Update the static TF when camera is fixed in the cell [here](https://github.com/ipa-kut/aruco_realsense/blob/master/src/aruco_rs2/launch/rs_aruco.launch.py#L62)
+
+
