@@ -49,9 +49,9 @@ class ArucoNode(rclpy.node.Node):
         # Declare and read parameters
         self.declare_parameter("marker_size", .0625)
         self.declare_parameter("aruco_dictionary_id", "DICT_5X5_250")
-        self.declare_parameter("image_topic", "/camera/color/image_raw")
-        self.declare_parameter("camera_info_topic", "/camera/color/camera_info")
-        self.declare_parameter("camera_frame", None)
+        self.declare_parameter("image_topic", "/usb_camera/image_raw")
+        self.declare_parameter("camera_info_topic", "/usb_camera/camera_info")
+        self.declare_parameter("camera_frame", "usb_camera_link")
         self.tfb_ = TransformBroadcaster(self)
         self.marker_size = self.get_parameter("marker_size").get_parameter_value().double_value
         dictionary_id_name = self.get_parameter(
@@ -128,19 +128,10 @@ class ArucoNode(rclpy.node.Node):
                                                                 self.aruco_dictionary,
                                                                 parameters=self.aruco_parameters)
         if marker_ids is not None:
-            self.get_logger().info("-------".format())
-            self.get_logger().info("Corners {}".format(corners))
-            self.get_logger().info("Marker IDs {}".format(marker_ids))
-            self.get_logger().info("Marker size {}".format(self.marker_size))
-            self.get_logger().info("Intrinsic matrix {}".format(self.intrinsic_mat))
-            self.get_logger().info("Distortion {}".format(self.distortion))
-
             if cv2.__version__ > '4.0.0':
                 rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners,
                                                                       self.marker_size, self.intrinsic_mat,
                                                                       self.distortion)
-                self.get_logger().info("CV2.v{} rvecs {}".format(cv2.__version__, rvecs))
-                self.get_logger().info("CV2.v{} tvecs {}".format(cv2.__version__, tvecs))
             else:
                 rvecs, tvecs = cv2.aruco.estimatePoseSingleMarkers(corners,
                                                                    self.marker_size, self.intrinsic_mat,
@@ -167,11 +158,13 @@ class ArucoNode(rclpy.node.Node):
                 tfs.transform.rotation.y = quat[1]
                 tfs.transform.rotation.z = quat[2]
                 tfs.transform.rotation.w = quat[3]
+                tfs.child_frame_id = "marker_"+str(marker_id[0])
+                self.tfb_.sendTransform(tfs)
 
                 pose_array.poses.append(pose)
                 markers.poses.append(pose)
                 markers.marker_ids.append(marker_id[0])    
-            self.tfb_.sendTransform(tfs)
+
             self.poses_pub.publish(pose_array)
             self.markers_pub.publish(markers)
 
